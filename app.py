@@ -46,7 +46,6 @@ def preprocess_data(df):
     df_copy['EMPLOYMENT_YEARS'] = df_copy['EMPLOYMENT_YEARS'].replace(365243 / -365.25, np.nan)
     
     # --- Create financial ratio columns ---
-    # These depend on existing columns, so we do them after the initial creation
     df_copy['DTI'] = df_copy['AMT_ANNUITY'] / df_copy['AMT_INCOME_TOTAL']
     df_copy['LOAN_TO_INCOME'] = df_copy['AMT_CREDIT'] / df_copy['AMT_INCOME_TOTAL']
     df_copy['ANNUITY_TO_CREDIT'] = df_copy['AMT_ANNUITY'] / df_copy['AMT_CREDIT']
@@ -79,7 +78,7 @@ def preprocess_data(df):
     df_copy['INCOME_BRACKET'] = pd.qcut(df_copy['AMT_INCOME_TOTAL'], 
                                    q=[0, 0.25, 0.75, 1.0], 
                                    labels=['Low', 'Mid', 'High'],
-                                   duplicates='drop') # Add duplicates='drop' for robustness
+                                   duplicates='drop')
     
     # --- Final De-fragmentation ---
     # As suggested by the warning, this creates a new, memory-efficient copy.
@@ -912,4 +911,5 @@ elif page == "Correlations & Drivers":
         * **Age & Employment Tiers:** Consider creating risk tiers. Applicants under a certain age (e.g., 25) and with less than 2 years of employment might automatically be placed in a higher-risk category requiring more scrutiny.
 
     """)
+
 
