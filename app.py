@@ -27,50 +27,63 @@ def load_data():
 
 # --- Data Preprocessing Function ---
 def preprocess_data(df):
-    """Takes the raw dataframe and returns a cleaned, ready-to-use version with advanced features."""
+    """
+    Takes the raw dataframe and returns a cleaned, ready-to-use version
+    with optimized performance to prevent fragmentation.
+    """
     df_copy = df.copy()
+
+    # --- Create all new columns in a separate dictionary ---
+    new_cols = {
+        'AGE_YEARS': -df_copy['DAYS_BIRTH'] / 365.25,
+        'EMPLOYMENT_YEARS': -df_copy['DAYS_EMPLOYED'] / 365.25
+    }
     
-    # Feature Engineering
-    df_copy['AGE_YEARS'] = -df_copy['DAYS_BIRTH'] / 365.25
-    df_copy['EMPLOYMENT_YEARS'] = -df_copy['DAYS_EMPLOYED'] / 365.25
+    # --- Assign all new columns at once using pd.concat ---
+    df_copy = pd.concat([df_copy, pd.DataFrame(new_cols, index=df_copy.index)], axis=1)
+
+    # Handle special value in the new employment column
     df_copy['EMPLOYMENT_YEARS'] = df_copy['EMPLOYMENT_YEARS'].replace(365243 / -365.25, np.nan)
+    
+    # --- Create financial ratio columns ---
+    # These depend on existing columns, so we do them after the initial creation
     df_copy['DTI'] = df_copy['AMT_ANNUITY'] / df_copy['AMT_INCOME_TOTAL']
     df_copy['LOAN_TO_INCOME'] = df_copy['AMT_CREDIT'] / df_copy['AMT_INCOME_TOTAL']
     df_copy['ANNUITY_TO_CREDIT'] = df_copy['AMT_ANNUITY'] / df_copy['AMT_CREDIT']
     
-    # Advanced: Outlier Handling (Winsorizing)
+    # --- Advanced: Outlier Handling (Winsorizing) ---
     skewed_cols = ['AMT_INCOME_TOTAL', 'AMT_CREDIT', 'AMT_ANNUITY', 'AMT_GOODS_PRICE']
     for col in skewed_cols:
         if col in df_copy.columns:
             df_copy[col] = winsorize(df_copy[col].astype(float), limits=[0.01, 0.01])
 
-    # Advanced: Rare Category Consolidation
+    # --- Advanced: Rare Category Consolidation ---
     for col in df_copy.select_dtypes(include='object').columns:
         category_freq = df_copy[col].value_counts(normalize=True)
         rare_categories = category_freq[category_freq < 0.01].index
         if len(rare_categories) > 0:
             df_copy[col] = df_copy[col].replace(rare_categories, 'Other')
 
-    
-    # Handle Missing Values
+    # --- Handle Missing Values ---
     missing_percent = df_copy.isnull().sum() / len(df_copy) * 100
     cols_to_drop = missing_percent[missing_percent > 60].index
     df_copy.drop(columns=cols_to_drop, inplace=True)
-
-    # Impute the rest using the recommended method
+    
     for col in df_copy.columns:
         if df_copy[col].dtype == 'object':
-            # Assign the result back to the column
             df_copy[col] = df_copy[col].fillna(df_copy[col].mode()[0])
         else:
-            # Assign the result back to the column
             df_copy[col] = df_copy[col].fillna(df_copy[col].median())
             
-    # Create Income Brackets
+    # --- Create Income Brackets ---
     df_copy['INCOME_BRACKET'] = pd.qcut(df_copy['AMT_INCOME_TOTAL'], 
                                    q=[0, 0.25, 0.75, 1.0], 
-                                   labels=['Low', 'Mid', 'High'])
-    return df_copy
+                                   labels=['Low', 'Mid', 'High'],
+                                   duplicates='drop') # Add duplicates='drop' for robustness
+    
+    # --- Final De-fragmentation ---
+    # As suggested by the warning, this creates a new, memory-efficient copy.
+    return df_copy.copy()
 
 @st.cache_data
 def convert_df_to_csv(df):
@@ -899,3 +912,4 @@ elif page == "Correlations & Drivers":
         * **Age & Employment Tiers:** Consider creating risk tiers. Applicants under a certain age (e.g., 25) and with less than 2 years of employment might automatically be placed in a higher-risk category requiring more scrutiny.
 
     """)
+
