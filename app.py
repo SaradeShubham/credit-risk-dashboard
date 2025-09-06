@@ -51,15 +51,20 @@ def preprocess_data(df):
         if len(rare_categories) > 0:
             df_copy[col] = df_copy[col].replace(rare_categories, 'Other')
 
+    
     # Handle Missing Values
     missing_percent = df_copy.isnull().sum() / len(df_copy) * 100
     cols_to_drop = missing_percent[missing_percent > 60].index
     df_copy.drop(columns=cols_to_drop, inplace=True)
+
+    # Impute the rest using the recommended method
     for col in df_copy.columns:
         if df_copy[col].dtype == 'object':
-            df_copy[col].fillna(df_copy[col].mode()[0], inplace=True)
+            # Assign the result back to the column
+            df_copy[col] = df_copy[col].fillna(df_copy[col].mode()[0])
         else:
-            df_copy[col].fillna(df_copy[col].median(), inplace=True)
+            # Assign the result back to the column
+            df_copy[col] = df_copy[col].fillna(df_copy[col].median())
             
     # Create Income Brackets
     df_copy['INCOME_BRACKET'] = pd.qcut(df_copy['AMT_INCOME_TOTAL'], 
@@ -892,4 +897,5 @@ elif page == "Correlations & Drivers":
         * **LTI Caps:** Based on the strong positive correlation between LTI and default, the bank could implement a policy to cap the LTI ratio, perhaps with stricter caps for younger applicants or those with shorter employment histories.
         * **Income Verification:** For applicants in certain high-risk occupations (identified on Page 3) or with low education levels, requiring additional income verification or a lower initial credit limit could mitigate risk.
         * **Age & Employment Tiers:** Consider creating risk tiers. Applicants under a certain age (e.g., 25) and with less than 2 years of employment might automatically be placed in a higher-risk category requiring more scrutiny.
+
     """)
