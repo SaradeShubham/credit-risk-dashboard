@@ -84,7 +84,7 @@ def preprocess_data(df):
     # --- Final De-fragmentation ---
     # As suggested by the warning, this creates a new, memory-efficient copy.
     return df_copy.copy()
-
+    
 @st.cache_data
 def convert_df_to_csv(df):
     """Converts a DataFrame to a CSV string for downloading."""
@@ -912,6 +912,7 @@ elif page == "Correlations & Drivers":
         * **Age & Employment Tiers:** Consider creating risk tiers. Applicants under a certain age (e.g., 25) and with less than 2 years of employment might automatically be placed in a higher-risk category requiring more scrutiny.
 
     """)
+
 
 
 
