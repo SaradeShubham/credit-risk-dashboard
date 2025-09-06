@@ -33,14 +33,14 @@ def preprocess_data(df):
     """
     df_copy = df.copy()
 
-    # --- Create all new columns in a separate dictionary ---
+    # --- Create new columns in a dictionary first ---
     new_cols = {
         'AGE_YEARS': -df_copy['DAYS_BIRTH'] / 365.25,
         'EMPLOYMENT_YEARS': -df_copy['DAYS_EMPLOYED'] / 365.25
     }
     
-    # --- Assign all new columns at once using pd.concat ---
-    df_copy = pd.concat([df_copy, pd.DataFrame(new_cols, index=df_copy.index)], axis=1)
+    # --- Assign new columns all at once to be more efficient ---
+    df_copy = df_copy.assign(**new_cols)
 
     # Handle special value in the new employment column
     df_copy['EMPLOYMENT_YEARS'] = df_copy['EMPLOYMENT_YEARS'].replace(365243 / -365.25, np.nan)
@@ -75,6 +75,7 @@ def preprocess_data(df):
             df_copy[col] = df_copy[col].fillna(df_copy[col].median())
             
     # --- Create Income Brackets ---
+    # We add duplicates='drop' to prevent errors if bin edges are not unique
     df_copy['INCOME_BRACKET'] = pd.qcut(df_copy['AMT_INCOME_TOTAL'], 
                                    q=[0, 0.25, 0.75, 1.0], 
                                    labels=['Low', 'Mid', 'High'],
@@ -911,5 +912,6 @@ elif page == "Correlations & Drivers":
         * **Age & Employment Tiers:** Consider creating risk tiers. Applicants under a certain age (e.g., 25) and with less than 2 years of employment might automatically be placed in a higher-risk category requiring more scrutiny.
 
     """)
+
 
 
